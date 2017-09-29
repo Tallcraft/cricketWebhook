@@ -1,17 +1,15 @@
 <?php
 include 'config.php';
 
-
 /* Open a connection */
 $link = mysqli_connect($db_host, $db_username, $db_password, $db_name);
-
 
 /* check connection */
 if (mysqli_connect_errno()) {
     printf("Connect failed: %s\n", mysqli_connect_error());
 }
 
-
+/* get id of last ticket processed */
 $fp = fopen(dirname(__FILE__) . "/lastidlog.txt", "r");
 $last_id = fread($fp, 1024);
 fclose($fp);
@@ -19,13 +17,13 @@ fclose($fp);
 class Ticket
 {
     public $author;
-    public $title;
+    public $message;
     public $ticketUrl;
 
     function __construct($ticketID)
     {
         $this->author = $this->getAuthor($ticketID);
-        $this->title = $this->getTitle($ticketID);
+        $this->message = $this->getMessage($ticketID);
         $this->ticketUrl = $this->getTicketUrl($ticketID);
     }
 
@@ -40,32 +38,30 @@ class Ticket
         return $row['name'];
     }
 
-    private function getTitle($id)
+    private function getMessage($id)
     {
         global $link;
         $tempdata = mysqli_query($link, "SELECT * FROM titles WHERE id='$id'");
         $row = mysqli_fetch_array($tempdata);
         return $row['to'];
-
     }
 
     private function getTicketUrl($id)
     {
+        global $ticket_panel_url;
         return $ticket_panel_url . $id;
     }
 }
 
 function send($ticketID, $message, $author, $ticketUrl)
 {
-
-
+    global $webhook_url;
     $data = '{
                 "username": "Ticket #' . $ticketID . '",
                 "content": "**' . $author . ':** ' . $message . '\n' . $ticketUrl . '"
             }';
 
     $data = $string = preg_replace('/\s+/', ' ', $data);
-
 
     $ch = curl_init($webhook_url);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
@@ -82,7 +78,8 @@ while ($row = mysqli_fetch_array($data)) {
 
     $ticketId = $row['id'];
     $ticket = new Ticket($ticketId);
-    send($ticketId, $ticket->title, $ticket->author);
+
+    send($ticketId, $ticket->message, $ticket->author, $ticket->ticketUrl);
     $last_id = $ticketId;
 }
 
