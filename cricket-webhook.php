@@ -82,7 +82,7 @@ while ($row = mysqli_fetch_array($data)) {
 
     $ticketId = $row['id'];
     $ticket = new Ticket($ticketId);
-    echo send($ticketId, $ticket->title, $ticket->author);
+    send($ticketId, $ticket->title, $ticket->author);
     $last_id = $ticketId;
 }
 
