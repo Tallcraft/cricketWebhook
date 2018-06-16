@@ -1,0 +1,35 @@
+{
+  "name": "cricketwebhook",
+  "version": "1.0.0",
+  "description": "Reads ticket data from Cricket (bukkit plugin) and pushes it to a Discord Webhook",
+  "main": "index.js",
+  "scripts": {
+    "dev": "cross-env nodemon src/index.js --exec babel-node -- $NODE_DEBUG_OPTION",
+    "start": "cross-env NODE_ENV=production babel src -d dist -s && node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tallcraft/cricketWebhook.git"
+  },
+  "author": "Paul Zuehlcke <mail@pbz.im>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Tallcraft/cricketWebhook/issues"
+  },
+  "homepage": "https://github.com/Tallcraft/cricketWebhook#readme",
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.12.0",
+    "nodemon": "^1.17.5"
+  },
+  "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "chalk": "^2.4.1",
+    "cross-env": "^5.2.0",
+    "knex": "^0.14.6",
+    "log4js": "^2.9.0",
+    "mysql": "^2.15.0"
+  }
+}
