@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import log4js from 'log4js';
+import fetch from 'node-fetch';
 import Ticket from './Ticket';
 
 const fs = require('fs');
@@ -11,7 +12,7 @@ const LAST_TICKET_FILE = '.lastTicketId';
 export default class CricketWebhook {
   constructor(db, webhookUrl, ticketWebUrl) {
     this.db = db;
-    this.webhookUrl = webhookUrl;
+    this.webhookUrl = new URL(webhookUrl);
     this.ticketWebUrl = ticketWebUrl;
 
     this._lastTicketId = 0;
@@ -92,14 +93,37 @@ export default class CricketWebhook {
   sendTicket(ticket) {
     return new Promise((resolve, reject) => {
       logger.debug('sendTicket');
-      return resolve();
+      if(!(ticket instanceof Ticket)) {
+        return reject(new Error('argument ticket must be Ticket object'));
+      }
+
+      fetch(this.webhookUrl, {method: 'POST', body: ticket.toDiscordPayload()})
+        .then((response) => {
+          if(response.ok) {
+            return response.json();
+          } else {
+            return Promise.reject(new Error('Server returned status code != 2xx'));
+          }
+        })
+        .then((jsonReply) => {
+          logger.debug('Sent ticket #' +  ticket.id, jsonReply);
+          return resolve();
+        })
+        .catch((error) => {
+          logger.error(`Error while sending ticket #${ticket.id} to Discord`, error);
+          return reject(error);
+        })
     });
   }
 
   sendTickets(tickets = []) {
     return new Promise((resolve, reject) => {
       logger.debug('sendTickets');
-      return resolve();
+      logger.info(`Sending ${tickets.length} tickets to Discord`);
+      const jobs = tickets.map(ticket => this.sendTicket(ticket));
+      Promise.all(jobs)
+        .then(resolve)
+        .catch(reject);
     });
   }
 }

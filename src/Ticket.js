@@ -1,5 +1,4 @@
 export default class Ticket {
-
   constructor(id, message, author, timestamp, ticketWebUrl) {
     this.id = id;
     this.message = message;
@@ -10,5 +9,12 @@ export default class Ticket {
 
   get url() {
     return this.ticketWebUrl + this.id;
+  }
+
+  toDiscordPayload() {
+    return {
+      username: `Ticket #${this.id}`,
+      content: `**${this.author}:** ${this.message}\n${this.ticketWebUrl}`,
+    };
   }
 }
