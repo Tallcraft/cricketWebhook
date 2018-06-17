@@ -1,10 +1,12 @@
+const url = require('url');
+
 export default class Ticket {
   /**
    * @param {Number} id - Ticket ID
    * @param {String} message - Ticket body
    * @param {String} author - Name of player who created the ticket
    * @param {String|Date} timestamp - Time when ticket was created
-   * @param {String} ticketWebUrl - Base URL to ticket web panel
+   * @param {Object} ticketWebUrl - Base URL to ticket web panel
    */
   constructor(id, message, author, timestamp, ticketWebUrl) {
     this.id = id;
@@ -19,17 +21,14 @@ export default class Ticket {
    * @returns {String}
    */
   get url() {
-    return this.ticketWebUrl.toString() + this.id;
+    return url.format(this.ticketWebUrl) + this.id;
   }
 
   /**
    * Convert ticket object to string compatible with discord webhook
    * @returns {String}
    */
-  toDiscordPayload() {
-    return JSON.stringify({
-      username: `Ticket #${this.id}`,
-      content: `**${this.author}:** ${this.message}\n${this.url}`,
-    });
+  toString() {
+    return `**Ticket #${this.id}**\n**${this.author}:** ${this.message}\n${this.url}`
   }
 }

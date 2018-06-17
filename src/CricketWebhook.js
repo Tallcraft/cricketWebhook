@@ -92,12 +92,6 @@ export default class CricketWebhook {
           });
           logger.debug('new tickets from db', tickets);
 
-          // Update last ticket id
-          // FIXME: This should rather happen after successful webhook send
-          if (tickets.length > 0) {
-            this.lastTicketId = tickets[tickets.length - 1].id;
-          }
-
           // Resolve with ticket array
           return resolve(tickets);
         })
@@ -107,21 +101,24 @@ export default class CricketWebhook {
 
   /**
    * Send ticket to Discord webhook
-   * @param {Ticket} ticket
+   * @param {Array<Ticket>} tickets
    * @returns {Promise<any>}
    */
-  sendTicket(ticket) {
+  sendTickets(tickets) {
     return new Promise((resolve, reject) => {
       logger.debug('sendTicket');
-      if (!(ticket instanceof Ticket)) {
-        return reject(new Error('argument ticket must be Ticket object'));
+      if (!Array.isArray(tickets) || tickets.some(t => !(t instanceof Ticket))) {
+        return reject(new Error('argument tickets must be Ticket array'));
       }
 
-      const body = ticket.toDiscordPayload();
+      const body = {
+        username: 'Tickets',
+        content: tickets.reduce((str, ticket) => `${str + ticket.toString()}\n\n`),
+      };
 
       fetch(this.webhookUrl, {
         method: 'POST',
-        body,
+        body: JSON.stringify(body),
         headers: { 'content-type': 'application/json' },
       }).then((response) => {
         logger.debug('server response', response);
@@ -135,29 +132,16 @@ export default class CricketWebhook {
       })
         .then((jsonReply) => {
           logger.debug('jsonReply', jsonReply);
-          logger.debug(`Sent ticket #${ticket.id}`);
+          logger.debug('Sent tickets');
+
+          // Update last ticket id
+          this.lastTicketId = tickets[tickets.length - 1].id;
           return resolve();
         })
         .catch((error) => {
-          logger.error(`Error while sending ticket #${ticket.id} to Discord`, error.message);
+          logger.error('Error while sending tickets to Discord', error.message);
           return reject(error);
         });
-    });
-  }
-
-  /**
-   * Send array of tickets to Discord webhook
-   * @param {Array<Ticket>} tickets
-   * @returns {Promise<any>}
-   */
-  sendTickets(tickets = []) {
-    return new Promise((resolve, reject) => {
-      logger.debug('sendTickets');
-      logger.info(`Sending ${tickets.length} tickets to Discord`);
-      const jobs = tickets.map(ticket => this.sendTicket(ticket)); // FIXME order not preserved
-      Promise.all(jobs)
-        .then(resolve)
-        .catch(reject);
     });
   }
 }
