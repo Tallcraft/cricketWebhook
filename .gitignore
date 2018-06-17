@@ -136,3 +136,5 @@ fabric.properties
 .idea/httpRequests
 
 dist/
+config.json
+.lastTicketId
