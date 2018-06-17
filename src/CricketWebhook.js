@@ -20,7 +20,7 @@ export default class CricketWebhook {
     } catch (err) {
       logger.debug('Could not restore lastTicketId from file. Starting with 0');
     }
-    logger.info('Current ticket id', this.lastTicketId);
+    logger.info('Last ticket id', this.lastTicketId);
   }
 
   get lastTicketId() {
@@ -28,8 +28,12 @@ export default class CricketWebhook {
   }
 
   set lastTicketId(id) {
-    fs.writeFileSync(LAST_TICKET_FILE, id);
-    this._lastTicketId = id;
+    if (Number.isInteger(id)) {
+      fs.writeFileSync(LAST_TICKET_FILE, id);
+      this._lastTicketId = id;
+    } else {
+      logger.warn('set lastTicketID: Invalid id, refusing to set');
+    }
   }
 
   check() {
@@ -45,19 +49,41 @@ export default class CricketWebhook {
   }
 
   getTickets() {
-    // TODO: fetch tickets starting from lastTicketId + 1 from mysql server
+    // fetch tickets starting from lastTicketId + 1 from mysql server
     return new Promise((resolve, reject) => {
       logger.debug('getTickets');
 
+      const tickets = [];
+
       // Build query
-      this.db.select().table('titles')
+      this.db
+        .select('id', 'timestamp', 'to as message', 'name as author')
+        .table('titles')
         .join('uuids', 'titles.author', '=', 'uuids.uuid')
         .where('id', '>', this.lastTicketId)
-        .options({ nestTables: true })
+        .orderBy('id')
         // Execute query
         .then((queryResult) => {
-          logger.debug('queryResult', queryResult);
-          return resolve(queryResult); // TODO: array of ticket objects
+          queryResult.forEach((ticketRaw) => {
+            logger.debug('ticketRaw', ticketRaw);
+            const t = new Ticket(
+              ticketRaw.id,
+              ticketRaw.message,
+              ticketRaw.author,
+              ticketRaw.timestamp,
+              this.ticketWebUrl,
+            );
+            tickets.push(t);
+          });
+          logger.debug('new tickets from db', tickets);
+
+          // Update last ticket id
+          if (tickets.length > 0) {
+            this.lastTicketId = tickets[tickets.length - 1].id;
+          }
+
+          // Resolve with ticket array
+          return resolve(tickets);
         })
         .catch(reject);
     });

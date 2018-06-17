@@ -49,6 +49,10 @@ db.on('query', (q) => {
   queryLogger.debug(q.sql);
 });
 
+// Start application
+logger.info('CricketWebhook');
+logger.info(`Checking database '${config.db.database}' every ${config.checkInterval} seconds.`);
+
 const cricketWebhook = new CricketWebhook(db, config.webhookUrl, config.ticketWebUrl);
 
 // TODO: promise chain instead of plain setInterval
