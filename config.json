@@ -1,0 +1,12 @@
+{
+  "checkInterval": 60,
+  "webhookUrl": "https://discordapp.com/api/webhooks/xxx",
+  "ticketWebUrl": "https://example.com/ticket/",
+  "db": {
+    "host": "localhost",
+    "port": 3306,
+    "database": "cricket",
+    "user": "root",
+    "password": "123456"
+  }
+}

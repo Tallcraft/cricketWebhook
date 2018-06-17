@@ -1,5 +1,12 @@
-import chalk from 'chalk';
 import log4js from 'log4js';
+import knex from 'knex';
+import CricketWebhook from './CricketWebhook';
+
+const fs = require('fs');
+// Read config file to variable
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+const defaultLogLevel = process.env.NODE_ENV === 'production' ? 'INFO' : 'DEBUG';
 
 // Setup logger
 log4js.configure({
@@ -9,16 +16,42 @@ log4js.configure({
   },
   categories: {
     default: {
-      appenders: ['out', 'file'],
-      level: process.env.NODE_ENV === 'production' ? 'INFO' : 'DEBUG',
+      appenders: ['out'],
+      level: defaultLogLevel,
+    },
+    queryLogger: {
+      appenders: ['out'],
+      level: defaultLogLevel,
     },
   },
 });
 
 // Get logger object
 const logger = log4js.getLogger();
+const queryLogger = log4js.getLogger('queryLogger');
 
 // Get ticket check interval in seconds (defaults to 1 minute)
-const interval = process.env.CHECK_INTERVAL || 60;
+const interval = (config.checkInterval || 60) * 1000;
 
-logger.debug('HELLO WORLD');
+// Setup DB connection
+const db = knex({
+  client: 'mysql',
+  connection: {
+    host: config.db.host,
+    user: config.db.user,
+    password: config.db.password,
+    database: config.db.database,
+  },
+});
+
+// Log mysql queries
+db.on('query', (q) => {
+  queryLogger.debug(q.sql);
+});
+
+const cricketWebhook = new CricketWebhook(db, config.webhookUrl, config.ticketWebUrl);
+
+// TODO: promise chain instead of plain setInterval
+cricketWebhook.check(); // Initial call
+setInterval(cricketWebhook.check, interval);
+
