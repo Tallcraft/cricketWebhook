@@ -50,7 +50,13 @@ export default class CricketWebhook {
   check() {
     return new Promise((resolve, reject) => {
       this.getTickets()
-        .then(t => this.sendTickets(t))
+        .then((tickets) => {
+          if (tickets.length === 0) {
+            logger.info('No new tickets');
+            return Promise.resolve();
+          }
+          return this.sendTickets(tickets);
+        })
         .catch((error) => {
           logger.error(error.message);
           return reject();
@@ -113,7 +119,7 @@ export default class CricketWebhook {
 
       const body = {
         username: 'Tickets',
-        content: tickets.reduce((str, ticket) => `${str + ticket.toString()}\n\n`),
+        content: tickets.reduce((str, ticket) => `${str + ticket.toString()}\n\n`, ''),
       };
 
       fetch(this.webhookUrl, {

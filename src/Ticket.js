@@ -29,6 +29,6 @@ export default class Ticket {
    * @returns {String}
    */
   toString() {
-    return `**Ticket #${this.id}**\n**${this.author}:** ${this.message}\n${this.url}`
+    return `**Ticket #${this.id}**\n**${this.author}:** ${this.message}\n${this.url}`;
   }
 }
