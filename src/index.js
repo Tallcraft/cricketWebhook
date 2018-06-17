@@ -49,6 +49,14 @@ db.on('query', (q) => {
   queryLogger.debug(q.sql);
 });
 
+// Test mysql connection
+db.raw('select 1+1 as result')
+  .catch((error) => {
+    logger.error('mySQL connection failed, check your db configuration');
+    logger.trace(error);
+    process.exit(1);
+  });
+
 // Start application
 logger.info('CricketWebhook');
 logger.info(`Checking database '${config.db.database}' every ${config.checkInterval} seconds.`);
@@ -57,6 +65,6 @@ const cricketWebhook = new CricketWebhook(db, config.webhookUrl, config.ticketWe
 
 // TODO: promise chain instead of plain setInterval
 cricketWebhook.check(); // Initial call
-setInterval(cricketWebhook.check, interval);
+setInterval(() => cricketWebhook.check(), interval);
 // FIXME: handle promise rejection
 

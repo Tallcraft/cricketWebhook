@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import Ticket from './Ticket';
 
 const fs = require('fs');
+const url = require('url');
 
 const logger = log4js.getLogger();
 
@@ -12,8 +13,8 @@ const LAST_TICKET_FILE = '.lastTicketId';
 export default class CricketWebhook {
   constructor(db, webhookUrl, ticketWebUrl) {
     this.db = db;
-    this.webhookUrl = new URL(webhookUrl);
-    this.ticketWebUrl = ticketWebUrl;
+    this.webhookUrl = url.parse(webhookUrl);
+    this.ticketWebUrl = url.parse(ticketWebUrl);
 
     this._lastTicketId = 0;
     try {
@@ -40,7 +41,7 @@ export default class CricketWebhook {
   check() {
     return new Promise((resolve, reject) => {
       this.getTickets()
-        .then(this.sendTickets)
+        .then(t => this.sendTickets(t))
         .then(resolve)
         .catch((error) => {
           logger.error(error);
@@ -79,6 +80,7 @@ export default class CricketWebhook {
           logger.debug('new tickets from db', tickets);
 
           // Update last ticket id
+          // FIXME: This should rather happen after successful webhook send
           if (tickets.length > 0) {
             this.lastTicketId = tickets[tickets.length - 1].id;
           }
@@ -93,26 +95,37 @@ export default class CricketWebhook {
   sendTicket(ticket) {
     return new Promise((resolve, reject) => {
       logger.debug('sendTicket');
-      if(!(ticket instanceof Ticket)) {
+      if (!(ticket instanceof Ticket)) {
         return reject(new Error('argument ticket must be Ticket object'));
       }
 
-      fetch(this.webhookUrl, {method: 'POST', body: ticket.toDiscordPayload()})
+      let responseOk;
+
+      logger.debug('POST', this.webhookUrl);
+      fetch(
+        this.webhookUrl,
+        {
+          method: 'POST',
+          body: ticket.toDiscordPayload(),
+          headers: { 'content-type': 'application/json' },
+        },
+      )
         .then((response) => {
-          if(response.ok) {
-            return response.json();
-          } else {
-            return Promise.reject(new Error('Server returned status code != 2xx'));
-          }
+          responseOk = response.ok;
+          return response.json();
         })
         .then((jsonReply) => {
-          logger.debug('Sent ticket #' +  ticket.id, jsonReply);
-          return resolve();
+          logger.debug('jsonReply', jsonReply);
+          if (responseOk) {
+            logger.debug(`Sent ticket #${ticket.id}`);
+            return resolve();
+          }
+          return Promise.reject(new Error('Server returned status code != 2xx'));
         })
         .catch((error) => {
           logger.error(`Error while sending ticket #${ticket.id} to Discord`, error);
           return reject(error);
-        })
+        });
     });
   }
 
