@@ -11,6 +11,11 @@ const logger = log4js.getLogger();
 const LAST_TICKET_FILE = '.lastTicketId';
 
 export default class CricketWebhook {
+  /**
+   * @param {Object} db - Knex database object
+   * @param {String} webhookUrl - URL of webhook endpoint to send tickets to
+   * @param {String} ticketWebUrl - Base URL of ticket webinterface
+   */
   constructor(db, webhookUrl, ticketWebUrl) {
     this.db = db;
     this.webhookUrl = url.parse(webhookUrl);
@@ -38,6 +43,10 @@ export default class CricketWebhook {
     }
   }
 
+  /**
+   * Fetch new tickets and send them to the webhook
+   * @returns {Promise<any>}
+   */
   check() {
     return new Promise((resolve, reject) => {
       this.getTickets()
@@ -50,6 +59,10 @@ export default class CricketWebhook {
     });
   }
 
+  /**
+   * Fetch tickets from mySQL server
+   * @returns {Promise<any>}
+   */
   getTickets() {
     // fetch tickets starting from lastTicketId + 1 from mysql server
     return new Promise((resolve, reject) => {
@@ -92,6 +105,11 @@ export default class CricketWebhook {
     });
   }
 
+  /**
+   * Send ticket to Discord webhook
+   * @param {Ticket} ticket
+   * @returns {Promise<any>}
+   */
   sendTicket(ticket) {
     return new Promise((resolve, reject) => {
       logger.debug('sendTicket');
@@ -127,6 +145,11 @@ export default class CricketWebhook {
     });
   }
 
+  /**
+   * Send array of tickets to Discord webhook
+   * @param {Array<Ticket>} tickets
+   * @returns {Promise<any>}
+   */
   sendTickets(tickets = []) {
     return new Promise((resolve, reject) => {
       logger.debug('sendTickets');
