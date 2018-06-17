@@ -55,6 +55,7 @@ export default class CricketWebhook {
             logger.info('No new tickets');
             return Promise.resolve();
           }
+          logger.info(`Found ${tickets.length} new tickets`);
           return this.sendTickets(tickets);
         })
         .catch((error) => {
