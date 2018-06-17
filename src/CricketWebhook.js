@@ -42,11 +42,11 @@ export default class CricketWebhook {
     return new Promise((resolve, reject) => {
       this.getTickets()
         .then(t => this.sendTickets(t))
-        .then(resolve)
         .catch((error) => {
-          logger.error(error);
+          logger.error(error.message);
           return reject();
-        });
+        })
+        .then(resolve);
     });
   }
 
@@ -64,7 +64,7 @@ export default class CricketWebhook {
         .join('uuids', 'titles.author', '=', 'uuids.uuid')
         .where('id', '>', this.lastTicketId)
         .orderBy('id')
-        // Execute query
+      // Execute query
         .then((queryResult) => {
           queryResult.forEach((ticketRaw) => {
             logger.debug('ticketRaw', ticketRaw);
@@ -99,31 +99,29 @@ export default class CricketWebhook {
         return reject(new Error('argument ticket must be Ticket object'));
       }
 
-      let responseOk;
+      const body = ticket.toDiscordPayload();
 
-      logger.debug('POST', this.webhookUrl);
-      fetch(
-        this.webhookUrl,
-        {
-          method: 'POST',
-          body: ticket.toDiscordPayload(),
-          headers: { 'content-type': 'application/json' },
-        },
-      )
-        .then((response) => {
-          responseOk = response.ok;
+      fetch(this.webhookUrl, {
+        method: 'POST',
+        body,
+        headers: { 'content-type': 'application/json' },
+      }).then((response) => {
+        logger.debug('server response', response);
+        if (response.ok) {
+          if (response.status === 204) {
+            return Promise.resolve({});
+          }
           return response.json();
-        })
+        }
+        return Promise.reject(new Error(`Server returned status code ${response.status}`));
+      })
         .then((jsonReply) => {
           logger.debug('jsonReply', jsonReply);
-          if (responseOk) {
-            logger.debug(`Sent ticket #${ticket.id}`);
-            return resolve();
-          }
-          return Promise.reject(new Error('Server returned status code != 2xx'));
+          logger.debug(`Sent ticket #${ticket.id}`);
+          return resolve();
         })
         .catch((error) => {
-          logger.error(`Error while sending ticket #${ticket.id} to Discord`, error);
+          logger.error(`Error while sending ticket #${ticket.id} to Discord`, error.message);
           return reject(error);
         });
     });
@@ -133,7 +131,7 @@ export default class CricketWebhook {
     return new Promise((resolve, reject) => {
       logger.debug('sendTickets');
       logger.info(`Sending ${tickets.length} tickets to Discord`);
-      const jobs = tickets.map(ticket => this.sendTicket(ticket));
+      const jobs = tickets.map(ticket => this.sendTicket(ticket)); // FIXME order not preserved
       Promise.all(jobs)
         .then(resolve)
         .catch(reject);

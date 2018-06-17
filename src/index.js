@@ -52,7 +52,7 @@ db.on('query', (q) => {
 // Test mysql connection
 db.raw('select 1+1 as result')
   .catch((error) => {
-    logger.error('mySQL connection failed, check your db configuration');
+    logger.error('mySQL connection failed, check your db configuration', error.message);
     logger.trace(error);
     process.exit(1);
   });

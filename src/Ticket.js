@@ -14,7 +14,7 @@ export default class Ticket {
   toDiscordPayload() {
     return JSON.stringify({
       username: `Ticket #${this.id}`,
-      content: `**${this.author}:** ${this.message}\n${this.url}`,
+      content: `**${this.author}:** ${this.message}\n${this.url.toString()}`,
     });
   }
 }
