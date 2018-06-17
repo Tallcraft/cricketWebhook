@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import log4js from 'log4js';
+import Ticket from './Ticket';
 
 const fs = require('fs');
 
@@ -32,12 +33,13 @@ export default class CricketWebhook {
   }
 
   check() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.getTickets()
         .then(this.sendTickets)
         .then(resolve)
         .catch((error) => {
           logger.error(error);
+          return reject();
         });
     });
   }
@@ -46,7 +48,18 @@ export default class CricketWebhook {
     // TODO: fetch tickets starting from lastTicketId + 1 from mysql server
     return new Promise((resolve, reject) => {
       logger.debug('getTickets');
-      return resolve();
+
+      // Build query
+      this.db.select().table('titles')
+        .join('uuids', 'titles.author', '=', 'uuids.uuid')
+        .where('id', '>', this.lastTicketId)
+        .options({ nestTables: true })
+        // Execute query
+        .then((queryResult) => {
+          logger.debug('queryResult', queryResult);
+          return resolve(queryResult); // TODO: array of ticket objects
+        })
+        .catch(reject);
     });
   }
 

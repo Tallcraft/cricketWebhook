@@ -54,4 +54,5 @@ const cricketWebhook = new CricketWebhook(db, config.webhookUrl, config.ticketWe
 // TODO: promise chain instead of plain setInterval
 cricketWebhook.check(); // Initial call
 setInterval(cricketWebhook.check, interval);
+// FIXME: handle promise rejection
 
