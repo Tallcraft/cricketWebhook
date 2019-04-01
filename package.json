@@ -28,7 +28,7 @@
     "babel-preset-env": "^1.7.0",
     "cross-env": "^5.2.0",
     "knex": "^0.14.6",
-    "log4js": "^3.0.0",
+    "log4js": "^4.1.0",
     "mysql": "^2.16.0",
     "node-fetch": "^2.1.2"
   }
